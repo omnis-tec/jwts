@@ -1,0 +1,156 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  ErrRepSt:
+    properties:
+      error_code:
+        description: Код ошибки
+        type: string
+        x-go-name: ErrorCode
+    type: object
+    x-go-package: github.com/mechta-market/jwts/internal/adapters/httpapi/rest
+  JwkSetSt:
+    properties:
+      keys:
+        items:
+          $ref: '#/definitions/JwkSt'
+        type: array
+        x-go-name: Keys
+    type: object
+    x-go-package: github.com/mechta-market/jwts/internal/domain/entities
+  JwkSt:
+    properties:
+      alg:
+        type: string
+        x-go-name: Alg
+      e:
+        type: string
+        x-go-name: E
+      kid:
+        type: string
+        x-go-name: Kid
+      kty:
+        type: string
+        x-go-name: Kty
+      "n":
+        type: string
+        x-go-name: "N"
+      use:
+        type: string
+        x-go-name: Use
+    type: object
+    x-go-package: github.com/mechta-market/jwts/internal/domain/entities
+  JwtCreateReqSt:
+    properties:
+      exp_seconds:
+        format: int64
+        type: integer
+        x-go-name: ExpSeconds
+      payload:
+        additionalProperties:
+          type: object
+        type: object
+        x-go-name: Payload
+      sub:
+        type: string
+        x-go-name: Sub
+    type: object
+    x-go-package: github.com/mechta-market/jwts/internal/domain/entities
+  JwtValidateRepSt:
+    properties:
+      claims:
+        additionalProperties:
+          type: object
+        type: object
+        x-go-name: Claims
+      valid:
+        type: boolean
+        x-go-name: Valid
+    type: object
+    x-go-package: github.com/mechta-market/jwts/internal/domain/entities
+host: jwts.com
+info:
+  title: Jwts-service API.
+  version: 1.0.0
+paths:
+  /jwk/set:
+    get:
+      operationId: hJwkGetSet
+      responses:
+        "200":
+          $ref: '#/responses/jwkGetSetRep'
+        "400":
+          $ref: '#/responses/errRep'
+      summary: Список публичных ключей jwk.
+      tags:
+      - jwk
+  /jwt:
+    post:
+      operationId: hJwtCreate
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          $ref: '#/definitions/JwtCreateReqSt'
+      responses:
+        "200":
+          $ref: '#/responses/jwtCreateRep'
+        "400":
+          $ref: '#/responses/errRep'
+      summary: Создать jwt-токен.
+      tags:
+      - jwt
+  /jwt/validate:
+    put:
+      operationId: hJwtValidate
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          properties:
+            token:
+              type: string
+              x-go-name: Token
+          type: object
+      responses:
+        "200":
+          $ref: '#/responses/jwtValidateRep'
+        "400":
+          $ref: '#/responses/errRep'
+      summary: Проверить и распарсить jwt-токен.
+      tags:
+      - jwt
+produces:
+- application/json
+responses:
+  errRep:
+    description: ""
+    schema:
+      $ref: '#/definitions/ErrRepSt'
+  jwkGetSetRep:
+    description: ""
+    schema:
+      $ref: '#/definitions/JwkSetSt'
+  jwtCreateRep:
+    description: ""
+    schema:
+      properties:
+        token:
+          type: string
+          x-go-name: Token
+      type: object
+  jwtValidateRep:
+    description: ""
+    schema:
+      $ref: '#/definitions/JwtValidateRepSt'
+schemes:
+- https
+- http
+securityDefinitions:
+  token:
+    description: 'Пример: `Authorization: 2cf24dba5fb0a30e26e83b2`'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
