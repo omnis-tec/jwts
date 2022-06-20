@@ -9,7 +9,7 @@ import (
 )
 
 func TestJwkGetSet(t *testing.T) {
-	jwks := app.ucs.JwkGetSet()
+	jwks := app.core.Jwk.GetSet()
 	require.NotNil(t, jwks)
 
 	jwksBytes, err := json.MarshalIndent(jwks, "", "  ")

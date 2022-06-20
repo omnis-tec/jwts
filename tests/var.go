@@ -1,15 +1,13 @@
 package tests
 
 import (
-	"github.com/mechta-market/jwts/internal/adapters/logger/zap"
-	"github.com/mechta-market/jwts/internal/domain/core"
-	"github.com/mechta-market/jwts/internal/domain/usecases"
+	dopLoggerZap "github.com/rendau/dop/adapters/logger/zap"
+	"github.com/rendau/jwts/internal/domain/core"
 )
 
 var (
 	app = struct {
-		lg   *zap.St
+		lg   *dopLoggerZap.St
 		core *core.St
-		ucs  *usecases.St
 	}{}
 )

@@ -4,50 +4,42 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/mechta-market/jwts/internal/adapters/httpapi/rest"
-	"github.com/mechta-market/jwts/internal/adapters/logger/zap"
-	"github.com/mechta-market/jwts/internal/domain/core"
-	"github.com/mechta-market/jwts/internal/domain/usecases"
-	"github.com/spf13/viper"
+	dopLoggerZap "github.com/rendau/dop/adapters/logger/zap"
+	dopServerHttps "github.com/rendau/dop/adapters/server/https"
+	"github.com/rendau/dop/dopTools"
+	"github.com/rendau/jwts/internal/adapters/server/rest"
+	"github.com/rendau/jwts/internal/domain/core"
 )
 
 func Execute() {
 	var err error
 
-	loadConf()
-
-	debug := viper.GetBool("DEBUG")
-
 	app := struct {
-		lg      *zap.St
-		core    *core.St
-		ucs     *usecases.St
-		restApi *rest.St
+		lg         *dopLoggerZap.St
+		core       *core.St
+		restApiSrv *dopServerHttps.St
 	}{}
 
-	app.lg, err = zap.New(viper.GetString("LOG_LEVEL"), debug, false)
-	if err != nil {
-		log.Fatal(err)
-	}
+	confLoad()
+
+	app.lg = dopLoggerZap.New(conf.LogLevel, conf.Debug)
 
 	app.core = core.New(app.lg)
 
-	if kid := viper.GetString("KID"); kid != "" {
+	if conf.Kid != "" {
 		var privatePem []byte
 		var publicPem []byte
 
-		if privatePemPath := viper.GetString("PRIVATE_PEM"); privatePemPath != "" {
+		if privatePemPath := conf.PrivatePem; privatePemPath != "" {
 			privatePem, err = ioutil.ReadFile(privatePemPath)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		if publicPemPath := viper.GetString("PUBLIC_PEM"); publicPemPath != "" {
+		if publicPemPath := conf.PublicPem; publicPemPath != "" {
 			publicPem, err = ioutil.ReadFile(publicPemPath)
 			if err != nil {
 				log.Fatal(err)
@@ -55,67 +47,43 @@ func Execute() {
 		}
 
 		// set keys
-		err = app.core.SetKeys(privatePem, publicPem, kid)
+		err = app.core.SetKeys(privatePem, publicPem, conf.Kid)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	app.ucs = usecases.New(
-		app.lg,
-		app.core,
-	)
-
-	restApiEChan := make(chan error, 1)
-
-	app.restApi = rest.New(
-		app.lg,
-		viper.GetString("HTTP_LISTEN"),
-		app.ucs,
-		restApiEChan,
-	)
+	// START
 
 	app.lg.Infow("Starting")
 
-	app.lg.Infow("http_listen " + viper.GetString("HTTP_LISTEN"))
-
-	app.restApi.Start()
-
-	stopSignalChan := make(chan os.Signal, 1)
-	signal.Notify(stopSignalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	app.restApiSrv = dopServerHttps.Start(
+		conf.HttpListen,
+		rest.GetHandler(
+			app.lg,
+			app.core,
+			conf.HttpCors,
+		),
+		app.lg,
+	)
 
 	var exitCode int
 
 	select {
-	case <-stopSignalChan:
-	case <-restApiEChan:
+	case <-dopTools.StopSignal():
+	case <-app.restApiSrv.Wait():
 		exitCode = 1
 	}
 
+	// STOP
+
 	app.lg.Infow("Shutting down...")
 
-	err = app.restApi.Shutdown(20 * time.Second)
-	if err != nil {
-		app.lg.Errorw("Fail to shutdown http-api", err)
+	if !app.restApiSrv.Shutdown(20 * time.Second) {
 		exitCode = 1
 	}
 
 	app.lg.Infow("Exit")
 
 	os.Exit(exitCode)
-}
-
-func loadConf() {
-	viper.SetDefault("DEBUG", "false")
-	viper.SetDefault("HTTP_LISTEN", ":80")
-	viper.SetDefault("LOG_LEVEL", "debug")
-
-	confFilePath := os.Getenv("CONF_PATH")
-	if confFilePath == "" {
-		confFilePath = "conf.yml"
-	}
-	viper.SetConfigFile(confFilePath)
-	_ = viper.ReadInConfig()
-
-	viper.AutomaticEnv()
 }

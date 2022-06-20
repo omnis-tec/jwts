@@ -1,6 +1,6 @@
 package main
 
-import "github.com/mechta-market/jwts/cmd"
+import "github.com/rendau/jwts/cmd"
 
 func main() {
 	cmd.Execute()

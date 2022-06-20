@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/mechta-market/jwts/internal/cns"
-	"github.com/mechta-market/jwts/internal/domain/entities"
-	"github.com/mechta-market/jwts/internal/domain/errs"
+	"github.com/rendau/dop/dopErrs"
+	"github.com/rendau/jwts/internal/cns"
+	"github.com/rendau/jwts/internal/domain/entities"
+	"github.com/rendau/jwts/internal/domain/errs"
 )
 
 type Jwt struct {
@@ -21,9 +22,13 @@ func NewJwt(r *St) *Jwt {
 	}
 }
 
-func (c *Jwt) Create(reqClaims map[string]interface{}) (string, error) {
+func (c *Jwt) Create(reqClaims map[string]any) (entities.JwtCreateRepSt, error) {
+	var err error
+
+	result := entities.JwtCreateRepSt{}
+
 	if c.r.privateKey == nil {
-		return "", nil
+		return result, nil
 	}
 
 	claims := jwt.MapClaims{}
@@ -50,19 +55,21 @@ func (c *Jwt) Create(reqClaims map[string]interface{}) (string, error) {
 		t.Header["kid"] = c.r.kid
 	}
 
-	return t.SignedString(c.r.privateKey)
+	result.Token, err = t.SignedString(c.r.privateKey)
+
+	return result, err
 }
 
 func (c *Jwt) Validate(value string) (*entities.JwtValidateRepSt, error) {
 	result := &entities.JwtValidateRepSt{}
 
 	if c.r.publicKey == nil {
-		return nil, errs.ServiceNA
+		return nil, dopErrs.ServiceNA
 	}
 
 	claims := jwt.MapClaims{}
 
-	_, err := jwt.ParseWithClaims(value, &claims, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(value, &claims, func(token *jwt.Token) (any, error) {
 		_, ok := token.Method.(*jwt.SigningMethodRSA)
 		if !ok {
 			return nil, errs.InvalidToken

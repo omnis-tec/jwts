@@ -4,11 +4,11 @@ import (
 	"crypto/rsa"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/mechta-market/jwts/internal/interfaces"
+	"github.com/rendau/dop/adapters/logger"
 )
 
 type St struct {
-	lg interfaces.Logger
+	lg logger.Lite
 
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
@@ -19,14 +19,13 @@ type St struct {
 }
 
 func New(
-	lg interfaces.Logger,
+	lg logger.Lite,
 ) *St {
 	c := &St{
 		lg: lg,
 	}
 
 	c.Jwk = NewJwk(c)
-
 	c.Jwt = NewJwt(c)
 
 	return c

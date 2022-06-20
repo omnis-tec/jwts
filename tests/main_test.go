@@ -6,9 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mechta-market/jwts/internal/adapters/logger/zap"
-	"github.com/mechta-market/jwts/internal/domain/core"
-	"github.com/mechta-market/jwts/internal/domain/usecases"
+	dopLoggerZap "github.com/rendau/dop/adapters/logger/zap"
+	"github.com/rendau/jwts/internal/domain/core"
 	"github.com/spf13/viper"
 )
 
@@ -26,15 +25,7 @@ func TestMain(m *testing.M) {
 
 	viper.AutomaticEnv()
 
-	app.lg, err = zap.New(
-		"info",
-		true,
-		false,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer app.lg.Sync()
+	app.lg = dopLoggerZap.New("info", true)
 
 	app.core = core.New(app.lg)
 
@@ -42,11 +33,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	app.ucs = usecases.New(
-		app.lg,
-		app.core,
-	)
 
 	// Start tests
 	code := m.Run()

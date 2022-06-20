@@ -1,13 +1,9 @@
 package errs
 
-type Err string
-
-func (e Err) Error() string {
-	return string(e)
-}
+import (
+	"github.com/rendau/dop/dopErrs"
+)
 
 const (
-	BadJson      = Err("bad_json")
-	ServiceNA    = Err("server_not_available")
-	InvalidToken = Err("invalid_token")
+	InvalidToken = dopErrs.Err("invalid_token")
 )

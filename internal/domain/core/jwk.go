@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 
-	"github.com/mechta-market/jwts/internal/domain/entities"
+	"github.com/rendau/jwts/internal/domain/entities"
 )
 
 type Jwk struct {
