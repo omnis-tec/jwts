@@ -47,7 +47,7 @@ func (c *Jwt) Create(reqClaims map[string]any) (entities.JwtCreateRepSt, error) 
 			delete(claims, "exp_seconds")
 		}
 	}
-	claims["iat"] = now.Add(-5 * time.Second).Unix()
+	claims["iat"] = now.Add(time.Second).Unix()
 
 	t := jwt.NewWithClaims(jwt.GetSigningMethod(cns.JwtSigningMethod), claims)
 
